@@ -827,18 +827,70 @@ namespace Project_FinchControl
             int minMaxThresholdValue, 
             int timeToMonitor)
         {
+            int secondsElapsed = 0;
+            bool thresholdExceeded = false;
+            int currentLightSensorValue = 0;
+
             DisplayScreenHeader("Set Alarm");
 
-            Console.WriteLine($"Sensors to monitor {sensorsToMonitor}");
-            Console.WriteLine("Range Type: {0}", rangeType);
-            Console.WriteLine("Min/Max threshold value: " + minMaxThresholdValue);
-            Console.WriteLine($"Time to Monitor: {timeToMonitor}");
+            Console.WriteLine($"\tSensors to monitor {sensorsToMonitor}");
+            Console.WriteLine("\tRange Type: {0}", rangeType);
+            Console.WriteLine("\tMin/Max threshold value: " + minMaxThresholdValue);
+            Console.WriteLine($"\tTime to Monitor: {timeToMonitor}");
             Console.WriteLine();
 
-            Console.WriteLine("Press any key to begin monitoring.");
+            Console.WriteLine("\tPress any key to begin monitoring.");
             Console.ReadKey();
             Console.WriteLine();
 
+            while ((secondsElapsed < timeToMonitor) && !thresholdExceeded)
+            {
+                switch (sensorsToMonitor)
+                {
+                    case "left":
+                        currentLightSensorValue = finchRobot.getLeftLightSensor();
+                        break;
+
+                    case "right":
+                        currentLightSensorValue = finchRobot.getRightLightSensor();
+                        break;
+
+                    case "both":
+                        currentLightSensorValue = (finchRobot.getRightLightSensor() + finchRobot.getLeftLightSensor()) / 2;
+                        break;
+
+                }
+
+                switch (rangeType)
+                {
+                    case "minimum":
+                        if (currentLightSensorValue < minMaxThresholdValue)
+                        {
+                            thresholdExceeded = true;
+                        }
+                        break;
+
+                    case "maximum":
+                        if (currentLightSensorValue > minMaxThresholdValue)
+                        {
+                            thresholdExceeded = true;
+                        }
+                        break;
+                }
+
+                finchRobot.wait(1000);
+                secondsElapsed++;
+
+            }
+
+            if (thresholdExceeded)
+            {
+                Console.WriteLine($"\tThe {rangeType} threshold value of {minMaxThresholdValue} was exceeded by the current light sensor value of {currentLightSensorValue}.");
+            }
+            else
+            {
+                Console.WriteLine($"\tThe {rangeType} threshold value of {minMaxThresholdValue} was not exceeded.");
+            }
 
             DisplayMenuPrompt("Light Alarm");
         }
