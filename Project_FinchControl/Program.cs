@@ -928,12 +928,12 @@ namespace Project_FinchControl
 
 
                 }
-
+                
 
             } while (!validResponse);
 
-            
 
+            Console.WriteLine($"\tYou choose {timeToMonitor} seconds. ");
             
 
             DisplayMenuPrompt("Light Alarm");
@@ -980,7 +980,8 @@ namespace Project_FinchControl
 
             } while (!validResponse);
 
-            
+            Console.WriteLine($"\tYou choose {minMaxThresholdValue}. ");
+
             DisplayMenuPrompt("Light Alarm");
 
 
@@ -1064,8 +1065,8 @@ namespace Project_FinchControl
                 }
 
             } while (!validResponse);
-            
 
+            Console.WriteLine($"\tYou choose {rangeType}. ");
 
             //rangeType = Console.ReadLine();
 
