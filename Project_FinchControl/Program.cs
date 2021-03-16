@@ -6,6 +6,22 @@ using FinchAPI;
 namespace Project_FinchControl
 {
 
+    public enum Command
+    {
+        NONE,
+        MOVEFORWARD,
+        MOVEBACKWARD,
+        STOPMOTORS,
+        WAIT,
+        TURNRIGHT,
+        TURNLEFT,
+        LEDON,
+        LEDOFF,
+        GETTEMPERATURE,
+        DONE
+    }
+
+
     // **************************************************
     //
     // Title: Finch Control - Menu Starter
@@ -14,7 +30,7 @@ namespace Project_FinchControl
     // Application Type: Console
     // Author: Thelen, Alex
     // Dated Created: 2/17/2020
-    // Last Modified: 3/7/2020
+    // Last Modified: 3/16/2020
     //
     // **************************************************
 
@@ -69,6 +85,7 @@ namespace Project_FinchControl
                 Console.WriteLine("\td) Light Alarm System");
                 Console.WriteLine("\te) Temperature Alarm System");
                 Console.WriteLine("\tf) Disconnect Finch Robot");
+                Console.WriteLine("\tg) User Programming");
                 Console.WriteLine("\tq) Quit");
                 Console.Write("\t\tEnter Choice:");
                 menuChoice = Console.ReadLine().ToLower();
@@ -98,6 +115,10 @@ namespace Project_FinchControl
                         TempAlarmDisplayMenuScreen(finchRobot);
                         break;
 
+                    case "g":
+                        UserProgrammingDisplayMenuScreen(finchRobot);
+                        break;
+
                     case "f":
                         DisplayDisconnectFinchRobot(finchRobot);
                         break;
@@ -117,7 +138,8 @@ namespace Project_FinchControl
             } while (!quitApplication);
         }
 
-        
+
+
 
         #region TALENT SHOW
 
@@ -625,10 +647,10 @@ namespace Project_FinchControl
         //double fahrenheit;
 
         //double celsius = celsiusTemp;
-        
+
 
         // fahrenheit = (celsius* 9) / 5 + 32;
-         
+
 
         //}
 
@@ -684,7 +706,7 @@ namespace Project_FinchControl
 
             for (int index = 0; index < numberOfDataPoints; index++)
             {
-                temperatures[index]= finchRobot.getTemperature();
+                temperatures[index] = finchRobot.getTemperature();
                 Console.WriteLine($"\tReading {index + 1}: {temperatures[index].ToString("n2")}");
                 int waitInSeconds = (int)(dataPointFrequency * 1000);
                 finchRobot.wait(waitInSeconds);
@@ -710,7 +732,7 @@ namespace Project_FinchControl
             DisplayScreenHeader("Data Point Frequency");
 
             Console.Write("\tFrequency of data points: ");
-            
+
 
             //validate user input
 
@@ -753,7 +775,7 @@ namespace Project_FinchControl
 
         static void LightAlarmDisplayMenuScreen(Finch finchRobot)
         {
-            
+
             Console.CursorVisible = true;
 
             bool quitMenu = false;
@@ -821,10 +843,10 @@ namespace Project_FinchControl
         }
 
         static void LightAlarmSetAlarm(
-            Finch finchRobot, 
-            string sensorsToMonitor, 
-            string rangeType, 
-            int minMaxThresholdValue, 
+            Finch finchRobot,
+            string sensorsToMonitor,
+            string rangeType,
+            int minMaxThresholdValue,
             int timeToMonitor)
         {
             int secondsElapsed = 0;
@@ -904,7 +926,7 @@ namespace Project_FinchControl
             do
             {
 
-                
+
                 validResponse = true;
 
                 DisplayScreenHeader("\tTime To Monitor");
@@ -928,13 +950,13 @@ namespace Project_FinchControl
 
 
                 }
-                
+
 
             } while (!validResponse);
 
 
             Console.WriteLine($"\tYou choose {timeToMonitor} seconds. ");
-            
+
 
             DisplayMenuPrompt("Light Alarm");
 
@@ -963,7 +985,7 @@ namespace Project_FinchControl
 
                 Console.Write($"\tEnter the {rangeType} light sensor value:");
 
-                if (!int.TryParse(Console.ReadLine(), out minMaxThresholdValue)) 
+                if (!int.TryParse(Console.ReadLine(), out minMaxThresholdValue))
                 {
                     validResponse = false;
 
@@ -976,7 +998,7 @@ namespace Project_FinchControl
 
 
                 }
-                
+
 
             } while (!validResponse);
 
@@ -1012,7 +1034,7 @@ namespace Project_FinchControl
                     Console.WriteLine();
                     Console.WriteLine("It appears you entered an invalid answer");
 
-                    
+
                     Console.WriteLine();
                     Console.WriteLine("\tPress any key to continue.");
                     Console.ReadKey();
@@ -1409,66 +1431,310 @@ namespace Project_FinchControl
 
         #endregion
 
-        #region FINCH ROBOT MANAGEMENT
+        #region USER PROGRAMMING
 
-        /// <summary>
-        /// *****************************************************************
-        /// *               Disconnect the Finch Robot                      *
-        /// *****************************************************************
-        /// </summary>
-        /// <param name="finchRobot">finch robot object</param>
-        static void DisplayDisconnectFinchRobot(Finch finchRobot)
+        static void UserProgrammingDisplayMenuScreen(Finch finchRobot)
         {
-            Console.CursorVisible = false;
+            bool quitMenu = false;
+            string menuChoice;
 
-            DisplayScreenHeader("Disconnect Finch Robot");
+            (int motorSpeed, int ledBrightness, double waitSeconds) commandParameters;
+            commandParameters.motorSpeed = 0;
+            commandParameters.ledBrightness = 0;
+            commandParameters.waitSeconds = 0;
 
-            Console.WriteLine("\tAbout to disconnect from the Finch robot.");
-            DisplayContinuePrompt();
+            List<Command> commands = new List<Command>();
 
-            finchRobot.disConnect();
 
-            Console.WriteLine("\tThe Finch robot is now disconnect.");
+            do
+            {
+                DisplayScreenHeader("User Programming Menu");
 
-            DisplayMenuPrompt("Main Menu");
+                //
+                // get user menu choice
+                //
+                Console.WriteLine("\ta) Set Command Parameters");
+                Console.WriteLine("\tb) Add Commands");
+                Console.WriteLine("\tc) View Commands");
+                Console.WriteLine("\td) Execute Commands");
+                Console.WriteLine("\tq) Quit");
+                Console.Write("\t\tEnter Choice:");
+                menuChoice = Console.ReadLine().ToLower();
+
+                //
+                // process user menu choice
+                //
+                switch (menuChoice)
+                {
+                    case "a":
+                        commandParameters = UserProgrammingDisplayGetCommandParameters();
+                        break;
+
+                    case "b":
+                        UserProgrammingDisplayGetFinchCommands(commands);
+                        break;
+
+                    case "c":
+                        UserProgrammingDisplayFinchCommands(commands);
+                        break;
+
+                    case "d":
+                        UserProgrammingDisplayExecuteFinchCommands(finchRobot, commands, commandParameters);
+                        break;
+
+                    case "q":
+                        quitMenu = true;
+                        break;
+
+                    default:
+                        Console.WriteLine();
+                        Console.WriteLine("\tPlease enter a letter for the menu choice.");
+                        DisplayContinuePrompt();
+                        break;
+                }
+
+            } while (!quitMenu);
+
         }
 
-        /// <summary>
-        /// *****************************************************************
-        /// *                  Connect the Finch Robot                      *
-        /// *****************************************************************
-        /// </summary>
-        /// <param name="finchRobot">finch robot object</param>
-        /// <returns>notify if the robot is connected</returns>
-        static bool DisplayConnectFinchRobot(Finch finchRobot)
+
+        static void UserProgrammingDisplayExecuteFinchCommands(
+            Finch finchRobot,
+            List<Command> commands,
+            (int motorSpeed, int ledBrightness, double waitSeconds) commandParameters)
         {
-            Console.CursorVisible = false;
+            int motorSpeed = commandParameters.motorSpeed;
+            int ledBrightness = commandParameters.ledBrightness;
+            int waitMilliSeconds = (int)(commandParameters.waitSeconds * 1000);
+            string commandFeedback = "";
+            const int TURNING_MOTOR_SPEED = 100;
 
-            bool robotConnected;
+            DisplayScreenHeader("Execute Finch Commands");
 
-            DisplayScreenHeader("Connect Finch Robot");
-
-            Console.WriteLine("\tAbout to connect to Finch robot. Please be sure the USB cable is connected to the robot and computer now.");
+            Console.WriteLine("\tThe Finch Robot is Ready to Execute the List of Commands.");
             DisplayContinuePrompt();
 
-            robotConnected = finchRobot.connect();
+            foreach (Command command in commands)
+            {
+                switch (command)
+                {
+                    case Command.NONE:
 
-            // TODO test connection and provide user feedback - text, lights, sounds
+                        break;
 
-            DisplayMenuPrompt("Main Menu");
+                    case Command.MOVEFORWARD:
+                        finchRobot.setMotors(motorSpeed, motorSpeed);
+                        commandFeedback = Command.MOVEFORWARD.ToString();
+                        break;
 
-            //
-            // reset finch robot
-            //
-            finchRobot.setLED(0, 0, 0);
-            finchRobot.noteOff();
+                    case Command.MOVEBACKWARD:
+                        finchRobot.setMotors(-motorSpeed, -motorSpeed);
+                        commandFeedback = Command.MOVEBACKWARD.ToString();
+                        break;
 
-            return robotConnected;
+                    case Command.STOPMOTORS:
+                        finchRobot.setMotors(0, 0);
+                        commandFeedback = Command.STOPMOTORS.ToString();
+                        break;
+
+                    case Command.WAIT:
+                        finchRobot.wait(waitMilliSeconds);
+                        commandFeedback = Command.WAIT.ToString();
+                        break;
+
+                    case Command.TURNRIGHT:
+                        finchRobot.setMotors(TURNING_MOTOR_SPEED, -TURNING_MOTOR_SPEED);
+                        commandFeedback = Command.TURNRIGHT.ToString();
+                        break;
+
+                    case Command.TURNLEFT:
+                        finchRobot.setMotors(-TURNING_MOTOR_SPEED, TURNING_MOTOR_SPEED);
+                        commandFeedback = Command.TURNLEFT.ToString();
+                        break;
+
+                    case Command.LEDON:
+                        finchRobot.setLED(ledBrightness, ledBrightness, ledBrightness);
+                        commandFeedback = Command.LEDON.ToString();
+                        break;
+
+                    case Command.LEDOFF:
+                        finchRobot.setLED(0, 0, 0);
+                        commandFeedback = Command.LEDOFF.ToString();
+                        break;
+
+                    case Command.GETTEMPERATURE:
+                        commandFeedback = $"Temperature: {finchRobot.getTemperature().ToString("n2")}\n";
+                        break;
+
+                    case Command.DONE:
+                        commandFeedback = Command.DONE.ToString();
+                        break;
+
+                    default:
+
+                        break;
+
+                }
+
+                Console.WriteLine($"\t{commandFeedback}");
+
+            }
+
+            DisplayMenuPrompt("User Programming");
+
+
         }
 
-        #endregion
 
-        #region USER INTERFACE
+
+
+        static void UserProgrammingDisplayFinchCommands(List<Command> commands)
+        {
+            DisplayScreenHeader("Finch Robot Commands");
+
+            foreach (Command command in commands)
+            {
+                Console.WriteLine($"\t{command}");
+            }
+
+            DisplayMenuPrompt("User Programming");
+
+        }
+
+        static void UserProgrammingDisplayGetFinchCommands(List<Command> commands)
+        {
+            Command command = Command.NONE;
+
+            DisplayScreenHeader("Finch Robot Commands");
+
+            //list commands
+            int commandCount = 1;
+            Console.WriteLine("\tList of Available Commands");
+            Console.WriteLine();
+            Console.WriteLine("\t-");
+            foreach (string commandName in Enum.GetNames(typeof(Command)))
+            {
+                Console.WriteLine($"- {commandName.ToLower()}  .");
+                if (commandCount % 5 == 0) Console.WriteLine("-\n\t");
+                commandCount++;
+            }
+            Console.WriteLine();
+
+            while (command != Command.DONE)
+            {
+                Console.WriteLine("\tEnter Command:");
+
+                if (Enum.TryParse(Console.ReadLine().ToUpper(), out command))
+                {
+                    commands.Add(command);
+                }
+                else
+                {
+                    Console.WriteLine("\t\t*******************************************");
+                    Console.WriteLine("\t\tPlease Enter a Command from the list above.");
+                    Console.WriteLine("\t\t*******************************************");
+
+                }
+
+            }
+
+            //echo commands
+
+            DisplayMenuPrompt("User Programming");
+
+        }
+
+
+
+
+        static (int motorSpeed, int ledBrightness, double waitSeconds) UserProgrammingDisplayGetCommandParameters()
+        {
+            DisplayScreenHeader("Command Parameters");
+
+            (int motorSpeed, int ledBrightness, double waitSeconds) commandParameters;
+            commandParameters.motorSpeed = 0;
+            commandParameters.ledBrightness = 0;
+            commandParameters.waitSeconds = 0;
+
+            GetValidInteger("\tEnter Motor Speed [1 - 255]:", 1, 255, out commandParameters.motorSpeed);
+            GetValidInteger("\tEnter LED Brightness [1 - 255]:", 1, 255, out commandParameters.ledBrightness);
+            GetValidDouble("\tEnter Wait in Seconds:", 0, 10, out commandParameters.waitSeconds);
+
+            Console.WriteLine();
+            Console.WriteLine($"\tMotor Speed: {commandParameters.motorSpeed}");
+            Console.WriteLine($"\tLED Brightness: {commandParameters.ledBrightness}");
+            Console.WriteLine($"\tWait Command Duration: {commandParameters.waitSeconds}");
+
+            DisplayMenuPrompt("User Programming");
+
+            return commandParameters;
+
+        }
+
+        static void GetValidDouble(string v1, int v2, int v3, out double waitSeconds)
+        {
+            
+            
+            bool validResponse = false;
+
+            do
+            {
+
+                Console.WriteLine(v1);
+                bool isDouble = Double.TryParse(Console.ReadLine(), out waitSeconds);
+
+                if (isDouble == false || waitSeconds < 0 || waitSeconds > 10)
+                {
+                    Console.Clear();
+                    Console.WriteLine("Please enter an integer betwwen '0' and '10'");
+                }
+                else
+                {
+                    validResponse = true;
+                }
+
+            } while (!validResponse);
+
+            
+
+
+
+            
+        }
+
+        static void GetValidInteger(string v1, int v2, int v3, out int motorSpeed)
+        {
+            
+            bool validResponse = false;
+
+            do
+            {
+                Console.WriteLine(v1);
+                bool isNumber = Int32.TryParse(Console.ReadLine(), out motorSpeed);
+
+                if (isNumber == true && motorSpeed <= 255 && motorSpeed >=1)
+                {
+                    validResponse = true;
+                }
+                else
+                {
+                    Console.Clear();
+                    Console.WriteLine("Please enter an integer betwwen '1' and '255'\n");
+                }
+
+
+            } while (!validResponse);
+
+            Console.WriteLine($"\tYou choose {motorSpeed}. ");
+
+                                    
+
+        }
+
+
+
+
+
 
         /// <summary>
         /// *****************************************************************
@@ -1535,6 +1801,195 @@ namespace Project_FinchControl
             Console.WriteLine();
         }
 
-        #endregion
+        /// <summary>
+        /// *****************************************************************
+        /// *               Disconnect the Finch Robot                      *
+        /// *****************************************************************
+        /// </summary>
+        /// <param name="finchRobot">finch robot object</param>
+        static void DisplayDisconnectFinchRobot(Finch finchRobot)
+        {
+            Console.CursorVisible = false;
+
+            DisplayScreenHeader("Disconnect Finch Robot");
+
+            Console.WriteLine("\tAbout to disconnect from the Finch robot.");
+            DisplayContinuePrompt();
+
+            finchRobot.disConnect();
+
+            Console.WriteLine("\tThe Finch robot is now disconnect.");
+
+            DisplayMenuPrompt("Main Menu");
+        }
+
+        /// <summary>
+        /// *****************************************************************
+        /// *                  Connect the Finch Robot                      *
+        /// *****************************************************************
+        /// </summary>
+        /// <param name="finchRobot">finch robot object</param>
+        /// <returns>notify if the robot is connected</returns>
+        static bool DisplayConnectFinchRobot(Finch finchRobot)
+        {
+            Console.CursorVisible = false;
+
+            bool robotConnected;
+
+            DisplayScreenHeader("Connect Finch Robot");
+
+            Console.WriteLine("\tAbout to connect to Finch robot. Please be sure the USB cable is connected to the robot and computer now.");
+            DisplayContinuePrompt();
+
+            robotConnected = finchRobot.connect();
+
+            // TODO test connection and provide user feedback - text, lights, sounds
+
+            DisplayMenuPrompt("Main Menu");
+
+            //
+            // reset finch robot
+            //
+            finchRobot.setLED(0, 0, 0);
+            finchRobot.noteOff();
+
+            return robotConnected;
+        }
+
     }
-}
+
+
+
+    #endregion
+
+    #region FINCH ROBOT MANAGEMENT
+
+    ///// <summary>
+    ///// *****************************************************************
+    ///// *               Disconnect the Finch Robot                      *
+    ///// *****************************************************************
+    ///// </summary>
+    ///// <param name="finchRobot">finch robot object</param>
+    //static void DisplayDisconnectFinchRobot(Finch finchRobot)
+    //    {
+    //        Console.CursorVisible = false;
+
+    //        DisplayScreenHeader("Disconnect Finch Robot");
+
+    //        Console.WriteLine("\tAbout to disconnect from the Finch robot.");
+    //        DisplayContinuePrompt();
+
+    //        finchRobot.disConnect();
+
+    //        Console.WriteLine("\tThe Finch robot is now disconnect.");
+
+    //        DisplayMenuPrompt("Main Menu");
+    //    }
+
+    //    /// <summary>
+    //    /// *****************************************************************
+    //    /// *                  Connect the Finch Robot                      *
+    //    /// *****************************************************************
+    //    /// </summary>
+    //    /// <param name="finchRobot">finch robot object</param>
+    //    /// <returns>notify if the robot is connected</returns>
+    //    static bool DisplayConnectFinchRobot(Finch finchRobot)
+    //    {
+    //        Console.CursorVisible = false;
+
+    //        bool robotConnected;
+
+    //        DisplayScreenHeader("Connect Finch Robot");
+
+    //        Console.WriteLine("\tAbout to connect to Finch robot. Please be sure the USB cable is connected to the robot and computer now.");
+    //        DisplayContinuePrompt();
+
+    //        robotConnected = finchRobot.connect();
+
+    //        // TODO test connection and provide user feedback - text, lights, sounds
+
+    //        DisplayMenuPrompt("Main Menu");
+
+    //        //
+    //        // reset finch robot
+    //        //
+    //        finchRobot.setLED(0, 0, 0);
+    //        finchRobot.noteOff();
+
+    //        return robotConnected;
+    //    }
+
+    #endregion
+
+    #region USER INTERFACE
+
+    ///// <summary>
+    ///// *****************************************************************
+    ///// *                     Welcome Screen                            *
+    ///// *****************************************************************
+    ///// </summary>
+    //static void DisplayWelcomeScreen()
+    //{
+    //    Console.CursorVisible = false;
+
+    //    Console.Clear();
+    //    Console.WriteLine();
+    //    Console.WriteLine("\t\tFinch Control");
+    //    Console.WriteLine();
+
+    //    DisplayContinuePrompt();
+    //}
+
+    ///// <summary>
+    ///// *****************************************************************
+    ///// *                     Closing Screen                            *
+    ///// *****************************************************************
+    ///// </summary>
+    //static void DisplayClosingScreen()
+    //{
+    //    Console.CursorVisible = false;
+
+    //    Console.Clear();
+    //    Console.WriteLine();
+    //    Console.WriteLine("\t\tThank you for using Finch Control!");
+    //    Console.WriteLine();
+
+    //    DisplayContinuePrompt();
+    //}
+
+    ///// <summary>
+    ///// display continue prompt
+    ///// </summary>
+    //static void DisplayContinuePrompt()
+    //{
+    //    Console.WriteLine();
+    //    Console.WriteLine("\tPress any key to continue.");
+    //    Console.ReadKey();
+    //}
+
+    ///// <summary>
+    ///// display menu prompt
+    ///// </summary>
+    //static void DisplayMenuPrompt(string menuName)
+    //{
+    //    Console.WriteLine();
+    //    Console.WriteLine($"\tPress any key to return to the {menuName} Menu.");
+    //    Console.ReadKey();
+    //}
+
+    ///// <summary>
+    ///// display screen header
+    ///// </summary>
+    //static void DisplayScreenHeader(string headerText)
+    //{
+    //    Console.Clear();
+    //    Console.WriteLine();
+    //    Console.WriteLine("\t\t" + headerText);
+    //    Console.WriteLine();
+    //}
+
+    #endregion
+  } 
+
+
+
